@@ -39,7 +39,7 @@ export function spawnClaude(
 
   return spawn("claude", args, {
     cwd: options.cwd,
-    stdio: ["pipe", "pipe", "pipe"],
+    stdio: ["inherit", "pipe", "pipe"],
     env: process.env,
   });
 }
