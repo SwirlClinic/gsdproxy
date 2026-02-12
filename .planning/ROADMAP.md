@@ -2,7 +2,7 @@
 
 ## Overview
 
-GSD Proxy delivers full bidirectional Claude Code access from Discord in three phases. Phase 1 proves the connection works end-to-end (bot starts, message goes to Claude via Agent SDK, formatted response comes back). Phase 2 adds the defining proxy capabilities -- permission forwarding with interactive buttons, thread-based output organization, and real-time streaming. Phase 3 completes the experience with session persistence, resume support, and cost visibility.
+GSD Proxy delivers full bidirectional Claude Code access from Discord in three phases. Phase 1 proves the connection works end-to-end (bot starts, message goes to Claude via CLI spawning, formatted response comes back). Phase 2 adds the defining proxy capabilities -- permission forwarding with interactive buttons, thread-based output organization, and real-time streaming. Phase 3 completes the experience with session persistence, resume support, and cost visibility.
 
 ## Phases
 
@@ -28,11 +28,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. A non-owner Discord user who tries to interact with the bot gets rejected
   4. Long responses are split at natural boundaries (paragraph, code block) without breaking formatting
   5. Bot stops gracefully when terminated, without orphaned processes
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md -- Project scaffold, Discord client, slash commands, and owner-only access control
+- [ ] 01-02-PLAN.md -- TDD: Discord message formatter (splitMessage + formatToolActivity)
+- [ ] 01-03-PLAN.md -- Claude CLI integration, bridge router, and end-to-end wiring
 
 ### Phase 2: Interactive Proxy
 **Goal**: User can approve/deny Claude's tool requests via Discord buttons, see streaming output in real-time, and get organized thread-based output
@@ -71,6 +72,6 @@ Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Bot + Claude Connection | 0/TBD | Not started | - |
+| 1. Bot + Claude Connection | 0/3 | Planned | - |
 | 2. Interactive Proxy | 0/TBD | Not started | - |
 | 3. Session Persistence | 0/TBD | Not started | - |
