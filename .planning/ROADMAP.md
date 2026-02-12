@@ -12,7 +12,7 @@ GSD Proxy delivers full bidirectional Claude Code access from Discord in three p
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Bot + Claude Connection** - Discord bot that sends messages to Claude and displays formatted responses
+- [x] **Phase 1: Bot + Claude Connection** - Discord bot that sends messages to Claude and displays formatted responses
 - [ ] **Phase 2: Interactive Proxy** - Permission forwarding, thread output, and real-time streaming
 - [ ] **Phase 3: Session Persistence** - Session resume, continuation, and cost tracking
 
@@ -31,9 +31,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md -- Project scaffold, Discord client, slash commands, and owner-only access control
-- [ ] 01-02-PLAN.md -- TDD: Discord message formatter (splitMessage + formatToolActivity)
-- [ ] 01-03-PLAN.md -- Claude CLI integration, bridge router, and end-to-end wiring
+- [x] 01-01-PLAN.md -- Project scaffold, Discord client, slash commands, and owner-only access control
+- [x] 01-02-PLAN.md -- TDD: Discord message formatter (splitMessage + formatToolActivity)
+- [x] 01-03-PLAN.md -- Claude CLI integration, bridge router, and end-to-end wiring
 
 ### Phase 2: Interactive Proxy
 **Goal**: User can approve/deny Claude's tool requests via Discord buttons, see streaming output in real-time, and get organized thread-based output
@@ -72,6 +72,6 @@ Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Bot + Claude Connection | 0/3 | Planned | - |
+| 1. Bot + Claude Connection | 3/3 | Complete | 2026-02-12 |
 | 2. Interactive Proxy | 0/TBD | Not started | - |
 | 3. Session Persistence | 0/TBD | Not started | - |

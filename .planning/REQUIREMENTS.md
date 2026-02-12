@@ -9,18 +9,18 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Bot Foundation
 
-- [ ] **BOTF-01**: User can start the bot on-demand from the command line
-- [ ] **BOTF-02**: User can stop the bot gracefully (active sessions abort cleanly)
-- [ ] **BOTF-03**: Bot connects to Discord and registers slash commands on startup
-- [ ] **BOTF-04**: Only the configured owner (Discord user ID) can interact with the bot
-- [ ] **BOTF-05**: Bot reports errors clearly in-channel rather than crashing silently
-- [ ] **BOTF-06**: Bot defers all slash command interactions immediately (3-second timeout compliance)
+- [x] **BOTF-01**: User can start the bot on-demand from the command line
+- [x] **BOTF-02**: User can stop the bot gracefully (active sessions abort cleanly)
+- [x] **BOTF-03**: Bot connects to Discord and registers slash commands on startup
+- [x] **BOTF-04**: Only the configured owner (Discord user ID) can interact with the bot
+- [x] **BOTF-05**: Bot reports errors clearly in-channel rather than crashing silently
+- [x] **BOTF-06**: Bot defers all slash command interactions immediately (3-second timeout compliance)
 
 ### Claude Integration
 
-- [ ] **CLDI-01**: User can send a message in Discord that gets forwarded to Claude Code via Agent SDK
-- [ ] **CLDI-02**: User can see Claude's response in Discord with proper markdown and code block formatting
-- [ ] **CLDI-03**: Every Agent SDK query enforces maxTurns and maxBudgetUsd limits
+- [x] **CLDI-01**: User can send a message in Discord that gets forwarded to Claude Code via CLI spawning
+- [x] **CLDI-02**: User can see Claude's response in Discord with proper markdown and code block formatting
+- [x] **CLDI-03**: Sequential queue processing limits concurrent execution (one Claude process at a time)
 - [ ] **CLDI-04**: User can see Claude's response tokens streaming in real-time via in-place message edits (debounced to avoid rate limits)
 - [ ] **CLDI-05**: User can see what tool Claude is currently using ("Reading file...", "Running command...") as status indicators
 - [ ] **CLDI-06**: User can continue a previous conversation with a `/continue` command that resumes the last session
@@ -35,7 +35,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Output & Display
 
-- [ ] **OUTD-01**: Long Claude responses are split at code block or paragraph boundaries, never mid-word or mid-code-fence
+- [x] **OUTD-01**: Long Claude responses are split at code block or paragraph boundaries, never mid-word or mid-code-fence
 - [ ] **OUTD-02**: Each Claude session creates a Discord thread where detailed output (tool calls, full responses) is posted
 - [ ] **OUTD-03**: Main channel receives a concise summary message with a link to the thread for full details
 - [ ] **OUTD-04**: When Claude's response exceeds ~1500 chars, a summary is posted in-channel and the full output goes to the thread
@@ -86,15 +86,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BOTF-01 | Phase 1 | Pending |
-| BOTF-02 | Phase 1 | Pending |
-| BOTF-03 | Phase 1 | Pending |
-| BOTF-04 | Phase 1 | Pending |
-| BOTF-05 | Phase 1 | Pending |
-| BOTF-06 | Phase 1 | Pending |
-| CLDI-01 | Phase 1 | Pending |
-| CLDI-02 | Phase 1 | Pending |
-| CLDI-03 | Phase 1 | Pending |
+| BOTF-01 | Phase 1 | Done |
+| BOTF-02 | Phase 1 | Done |
+| BOTF-03 | Phase 1 | Done |
+| BOTF-04 | Phase 1 | Done |
+| BOTF-05 | Phase 1 | Done |
+| BOTF-06 | Phase 1 | Done |
+| CLDI-01 | Phase 1 | Done |
+| CLDI-02 | Phase 1 | Done |
+| CLDI-03 | Phase 1 | Done |
 | CLDI-04 | Phase 2 | Pending |
 | CLDI-05 | Phase 2 | Pending |
 | CLDI-06 | Phase 3 | Pending |
@@ -103,7 +103,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PERM-03 | Phase 2 | Pending |
 | PERM-04 | Phase 2 | Pending |
 | PERM-05 | Phase 2 | Pending |
-| OUTD-01 | Phase 1 | Pending |
+| OUTD-01 | Phase 1 | Done |
 | OUTD-02 | Phase 2 | Pending |
 | OUTD-03 | Phase 2 | Pending |
 | OUTD-04 | Phase 2 | Pending |
@@ -120,4 +120,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-12 after roadmap creation*
+*Last updated: 2026-02-12 after Phase 1 completion*
