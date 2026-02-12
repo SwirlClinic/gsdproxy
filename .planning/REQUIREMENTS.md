@@ -1,0 +1,123 @@
+# Requirements: GSD Proxy
+
+**Defined:** 2026-02-12
+**Core Value:** Full bidirectional Claude Code access from Discord — anything you can do in the terminal, you can do from a Discord channel.
+
+## v1 Requirements
+
+Requirements for initial release. Each maps to roadmap phases.
+
+### Bot Foundation
+
+- [ ] **BOTF-01**: User can start the bot on-demand from the command line
+- [ ] **BOTF-02**: User can stop the bot gracefully (active sessions abort cleanly)
+- [ ] **BOTF-03**: Bot connects to Discord and registers slash commands on startup
+- [ ] **BOTF-04**: Only the configured owner (Discord user ID) can interact with the bot
+- [ ] **BOTF-05**: Bot reports errors clearly in-channel rather than crashing silently
+- [ ] **BOTF-06**: Bot defers all slash command interactions immediately (3-second timeout compliance)
+
+### Claude Integration
+
+- [ ] **CLDI-01**: User can send a message in Discord that gets forwarded to Claude Code via Agent SDK
+- [ ] **CLDI-02**: User can see Claude's response in Discord with proper markdown and code block formatting
+- [ ] **CLDI-03**: Every Agent SDK query enforces maxTurns and maxBudgetUsd limits
+- [ ] **CLDI-04**: User can see Claude's response tokens streaming in real-time via in-place message edits (debounced to avoid rate limits)
+- [ ] **CLDI-05**: User can see what tool Claude is currently using ("Reading file...", "Running command...") as status indicators
+- [ ] **CLDI-06**: User can continue a previous conversation with a `/continue` command that resumes the last session
+
+### Permission System
+
+- [ ] **PERM-01**: When Claude requests tool permission, user sees an embed with tool name and input, plus Allow/Deny buttons in Discord
+- [ ] **PERM-02**: User can approve or deny tool execution with a single button click
+- [ ] **PERM-03**: Permission prompts auto-deny after 5 minutes if user doesn't respond, with a timeout notification
+- [ ] **PERM-04**: When Claude asks a clarifying question (AskUserQuestion), user sees the question with selectable options rendered as Discord buttons or select menus
+- [ ] **PERM-05**: User's selected answer to AskUserQuestion gets forwarded back to Claude and execution continues
+
+### Output & Display
+
+- [ ] **OUTD-01**: Long Claude responses are split at code block or paragraph boundaries, never mid-word or mid-code-fence
+- [ ] **OUTD-02**: Each Claude session creates a Discord thread where detailed output (tool calls, full responses) is posted
+- [ ] **OUTD-03**: Main channel receives a concise summary message with a link to the thread for full details
+- [ ] **OUTD-04**: When Claude's response exceeds ~1500 chars, a summary is posted in-channel and the full output goes to the thread
+- [ ] **OUTD-05**: User can see token usage and estimated cost after each session completes (from SDK's total_cost_usd)
+
+### Session Management
+
+- [ ] **SESN-01**: Session IDs are persisted so sessions survive bot restarts
+- [ ] **SESN-02**: User can resume a previous session after bot restart using stored session ID
+- [ ] **SESN-03**: User can start a new session with a `/new` command that creates a fresh context
+- [ ] **SESN-04**: User can stop an active session with a `/stop` command that aborts execution cleanly
+
+## v2 Requirements
+
+Deferred to future release. Tracked but not in current roadmap.
+
+### Production Readiness
+
+- **PROD-01**: Bot recovers gracefully from Discord gateway WebSocket disconnects without losing active sessions
+- **PROD-02**: Bot handles thread auto-archive gracefully during long-running sessions
+- **PROD-03**: Structured logging with pino throughout all components for debugging
+
+### Advanced Features
+
+- **ADVF-01**: User can pass Discord image attachments to Claude for analysis
+- **ADVF-02**: User can switch between project working directories without restarting
+- **ADVF-03**: User can checkpoint/rewind file changes via SDK's enableFileCheckpointing
+
+## Out of Scope
+
+Explicitly excluded. Documented to prevent scope creep.
+
+| Feature | Reason |
+|---------|--------|
+| Multi-user access | Security risk — Claude runs with host filesystem permissions; sharing is dangerous |
+| Always-on daemon mode | Resource waste for single-user tool; on-demand is sufficient |
+| Auto-accept all permissions | Eliminates core safety mechanism; one bad command = data loss |
+| Web dashboard / GUI | Discord is the sole interface; adding a web stack doubles maintenance |
+| Voice channel integration | Code conversations have too many symbols for reliable speech-to-text |
+| File upload/download through Discord | Claude already has filesystem access; Discord file handling adds complexity |
+| Multiple concurrent Claude sessions | Resource/cost multiplication; one session at a time is sufficient |
+| Custom slash commands per project | Dynamic registration is slow; natural language to Claude is better |
+| Plugin/extension system | Agent SDK already has MCP server support and hooks |
+
+## Traceability
+
+Which phases cover which requirements. Updated during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| BOTF-01 | — | Pending |
+| BOTF-02 | — | Pending |
+| BOTF-03 | — | Pending |
+| BOTF-04 | — | Pending |
+| BOTF-05 | — | Pending |
+| BOTF-06 | — | Pending |
+| CLDI-01 | — | Pending |
+| CLDI-02 | — | Pending |
+| CLDI-03 | — | Pending |
+| CLDI-04 | — | Pending |
+| CLDI-05 | — | Pending |
+| CLDI-06 | — | Pending |
+| PERM-01 | — | Pending |
+| PERM-02 | — | Pending |
+| PERM-03 | — | Pending |
+| PERM-04 | — | Pending |
+| PERM-05 | — | Pending |
+| OUTD-01 | — | Pending |
+| OUTD-02 | — | Pending |
+| OUTD-03 | — | Pending |
+| OUTD-04 | — | Pending |
+| OUTD-05 | — | Pending |
+| SESN-01 | — | Pending |
+| SESN-02 | — | Pending |
+| SESN-03 | — | Pending |
+| SESN-04 | — | Pending |
+
+**Coverage:**
+- v1 requirements: 26 total
+- Mapped to phases: 0
+- Unmapped: 26 ⚠️
+
+---
+*Requirements defined: 2026-02-12*
+*Last updated: 2026-02-12 after initial definition*
