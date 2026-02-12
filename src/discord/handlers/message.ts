@@ -1,6 +1,17 @@
-import { Message } from "discord.js";
+import { type Message, type TextChannel } from "discord.js";
 import { config } from "../../config.js";
 import { logger } from "../../logger.js";
+import type { BridgeRouter } from "../../bridge/router.js";
+
+let router: BridgeRouter | null = null;
+
+/**
+ * Set the BridgeRouter instance used by the message handler.
+ * Called from index.ts during startup wiring.
+ */
+export function setRouter(r: BridgeRouter): void {
+  router = r;
+}
 
 export async function handleMessage(message: Message): Promise<void> {
   // Guard: ignore bot messages (prevent self-reply loops)
@@ -18,7 +29,7 @@ export async function handleMessage(message: Message): Promise<void> {
     return;
   }
 
-  // All guards passed -- forward to Claude (Plan 02 will wire this)
+  // All guards passed -- forward to Claude via BridgeRouter
   const truncated =
     message.content.length > 100
       ? message.content.slice(0, 100) + "..."
@@ -29,7 +40,13 @@ export async function handleMessage(message: Message): Promise<void> {
     "Received owner message"
   );
 
-  await message.reply(
-    `Received: ${truncated}\nClaude integration coming in next plan.`
-  );
+  if (!router) {
+    logger.error("BridgeRouter not initialized");
+    await (message.channel as TextChannel).send(
+      "**Error:** Bot is not fully initialized. Please restart."
+    );
+    return;
+  }
+
+  await router.handleMessage(message);
 }
