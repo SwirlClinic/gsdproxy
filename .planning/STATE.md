@@ -10,28 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 1 of 3 (Bot + Claude Connection)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: Executing
-Last activity: 2026-02-12 -- Completed 01-01-PLAN.md
+Last activity: 2026-02-12 -- Completed 01-02-PLAN.md
 
-Progress: [███░░░░░░░] 11%
+Progress: [████░░░░░░] 22%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
+- Total plans completed: 2
 - Average duration: 3min
-- Total execution time: 0.05 hours
+- Total execution time: 0.1 hours
 
 **By Phase:**
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 01 | P01 | 3min | 2 | 14 |
+| 01 | P02 | 3min | 3 | 2 |
 
 **Recent Trend:**
-- Last 5 plans: 3min
-- Trend: Starting
+- Last 5 plans: 3min, 3min
+- Trend: Consistent
 
 *Updated after each plan completion*
 
@@ -47,6 +48,9 @@ Recent decisions affecting current work:
 - [Phase 01-01]: Pino logger in separate logger.ts module for shared import across all files
 - [Phase 01-01]: Pluggable callback pattern (setSessionStatusGetter, setOnStop, setOnNew) for Plan 02 wiring
 - [Phase 01-01]: deferReply in interaction handler before command dispatch for 3-second timeout compliance
+- [Phase 01-02]: Default maxLength 1900 (100-char buffer below Discord's 2000 limit)
+- [Phase 01-02]: 10-chunk cap with truncation notice to prevent channel flooding
+- [Phase 01-02]: Data-driven tool format map for formatToolActivity extensibility
 
 ### Pending Todos
 
@@ -59,5 +63,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 01-01-PLAN.md
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None
