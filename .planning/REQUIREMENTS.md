@@ -1,7 +1,7 @@
 # Requirements: GSD Proxy
 
 **Defined:** 2026-02-12
-**Core Value:** Full bidirectional Claude Code access from Discord — anything you can do in the terminal, you can do from a Discord channel.
+**Core Value:** Full bidirectional Claude Code access from Discord -- anything you can do in the terminal, you can do from a Discord channel.
 
 ## v1 Requirements
 
@@ -70,7 +70,7 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Feature | Reason |
 |---------|--------|
-| Multi-user access | Security risk — Claude runs with host filesystem permissions; sharing is dangerous |
+| Multi-user access | Security risk -- Claude runs with host filesystem permissions; sharing is dangerous |
 | Always-on daemon mode | Resource waste for single-user tool; on-demand is sufficient |
 | Auto-accept all permissions | Eliminates core safety mechanism; one bad command = data loss |
 | Web dashboard / GUI | Discord is the sole interface; adding a web stack doubles maintenance |
@@ -86,38 +86,38 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BOTF-01 | — | Pending |
-| BOTF-02 | — | Pending |
-| BOTF-03 | — | Pending |
-| BOTF-04 | — | Pending |
-| BOTF-05 | — | Pending |
-| BOTF-06 | — | Pending |
-| CLDI-01 | — | Pending |
-| CLDI-02 | — | Pending |
-| CLDI-03 | — | Pending |
-| CLDI-04 | — | Pending |
-| CLDI-05 | — | Pending |
-| CLDI-06 | — | Pending |
-| PERM-01 | — | Pending |
-| PERM-02 | — | Pending |
-| PERM-03 | — | Pending |
-| PERM-04 | — | Pending |
-| PERM-05 | — | Pending |
-| OUTD-01 | — | Pending |
-| OUTD-02 | — | Pending |
-| OUTD-03 | — | Pending |
-| OUTD-04 | — | Pending |
-| OUTD-05 | — | Pending |
-| SESN-01 | — | Pending |
-| SESN-02 | — | Pending |
-| SESN-03 | — | Pending |
-| SESN-04 | — | Pending |
+| BOTF-01 | Phase 1 | Pending |
+| BOTF-02 | Phase 1 | Pending |
+| BOTF-03 | Phase 1 | Pending |
+| BOTF-04 | Phase 1 | Pending |
+| BOTF-05 | Phase 1 | Pending |
+| BOTF-06 | Phase 1 | Pending |
+| CLDI-01 | Phase 1 | Pending |
+| CLDI-02 | Phase 1 | Pending |
+| CLDI-03 | Phase 1 | Pending |
+| CLDI-04 | Phase 2 | Pending |
+| CLDI-05 | Phase 2 | Pending |
+| CLDI-06 | Phase 3 | Pending |
+| PERM-01 | Phase 2 | Pending |
+| PERM-02 | Phase 2 | Pending |
+| PERM-03 | Phase 2 | Pending |
+| PERM-04 | Phase 2 | Pending |
+| PERM-05 | Phase 2 | Pending |
+| OUTD-01 | Phase 1 | Pending |
+| OUTD-02 | Phase 2 | Pending |
+| OUTD-03 | Phase 2 | Pending |
+| OUTD-04 | Phase 2 | Pending |
+| OUTD-05 | Phase 3 | Pending |
+| SESN-01 | Phase 3 | Pending |
+| SESN-02 | Phase 3 | Pending |
+| SESN-03 | Phase 3 | Pending |
+| SESN-04 | Phase 3 | Pending |
 
 **Coverage:**
 - v1 requirements: 26 total
-- Mapped to phases: 0
-- Unmapped: 26 ⚠️
+- Mapped to phases: 26
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-12 after initial definition*
+*Last updated: 2026-02-12 after roadmap creation*
