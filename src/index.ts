@@ -9,6 +9,7 @@ import { setOnStop } from "./discord/commands/stop.js";
 import { setOnNew } from "./discord/commands/new.js";
 import { handleMessage, setRouter } from "./discord/handlers/message.js";
 import { handleInteraction } from "./discord/handlers/interaction.js";
+import { ClaudeSession } from "./claude/session.js";
 import { BridgeRouter } from "./bridge/router.js";
 import { IpcServer } from "./bridge/ipc-server.js";
 import { PermissionHandler } from "./bridge/permission-handler.js";
@@ -18,8 +19,16 @@ import { logger } from "./logger.js";
 const ipcServer = new IpcServer(config.ipcPort);
 const permissionHandler = new PermissionHandler();
 
-// Create BridgeRouter instance with IPC server and permission handler
-const router = new BridgeRouter(cwd, ipcServer, permissionHandler);
+// Create persistent Claude session and spawn the process
+const session = new ClaudeSession({
+  cwd,
+  ipcPort: config.ipcPort,
+  dangerouslySkipPermissions: config.dangerouslySkipPermissions,
+});
+session.spawn();
+
+// Create BridgeRouter instance with session, IPC server, and permission handler
+const router = new BridgeRouter(session, cwd, ipcServer, permissionHandler);
 
 // Wire the router to the message handler
 setRouter(router);
@@ -30,7 +39,9 @@ setSessionStatusGetter(() => {
   const lines: string[] = [];
 
   lines.push(status.isProcessing ? "**Status:** Processing" : "**Status:** Idle");
+  lines.push(`**Session state:** ${status.sessionState}`);
   lines.push(`**Session:** ${status.sessionId ?? "none"}`);
+  lines.push(`**Cost:** $${status.totalCostUsd.toFixed(4)}`);
   lines.push(`**Working directory:** ${status.cwd}`);
 
   if (status.queueLength > 0) {
@@ -78,8 +89,8 @@ client.on(Events.InteractionCreate, (interaction) => {
 async function shutdown(signal: string): Promise<void> {
   logger.info({ signal }, "Shutting down gracefully");
 
-  // Kill any active Claude process
-  router.abort();
+  // Destroy the Claude session (kills the persistent process)
+  session.destroy();
 
   // Stop the IPC server (auto-denies pending permission requests)
   try {
@@ -98,9 +109,9 @@ async function shutdown(signal: string): Promise<void> {
 process.on("SIGINT", () => shutdown("SIGINT"));
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 
-// Safety net: ensure child process is killed if node exits unexpectedly
+// Safety net: ensure Claude process is killed if node exits unexpectedly
 process.on("exit", () => {
-  router.abort();
+  session.destroy();
 });
 
 // Register slash commands, start IPC server, and login
