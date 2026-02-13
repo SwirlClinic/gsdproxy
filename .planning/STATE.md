@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** Full bidirectional Claude Code access from Discord -- anything you can do in the terminal, you can do from a Discord channel.
-**Current focus:** Phase 2: Interactive Proxy -- MCP permission bridge + Discord components
+**Current focus:** Phase 2 complete -- ready for Phase 3: Session Persistence (if planned)
 
 ## Current Position
 
-Phase: 2 of 3 (Interactive Proxy)
-Plan: 3 of 4 in current phase (02-01, 02-02, 02-03 complete)
-Status: Executing
-Last activity: 2026-02-12 -- Completed 02-03-PLAN.md (Claude CLI MCP Wiring)
+Phase: 2 of 3 (Interactive Proxy) -- PHASE COMPLETE
+Plan: 4 of 4 in current phase (02-01, 02-02, 02-03, 02-04 complete)
+Status: Phase 2 Complete
+Last activity: 2026-02-13 -- Completed 02-04-PLAN.md (Thread Integration, Streaming, IPC Wiring)
 
-Progress: [██████░░░░] 60%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 5min
-- Total execution time: 0.45 hours
+- Total plans completed: 7
+- Average duration: 4min
+- Total execution time: 0.5 hours
 
 **By Phase:**
 
@@ -33,10 +33,11 @@ Progress: [██████░░░░] 60%
 | 02 | P01 | 2min | 2 | 4 |
 | 02 | P02 | 2min | 2 | 3 |
 | 02 | P03 | 2min | 2 | 5 |
+| 02 | P04 | 3min | 3 | 6 |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 15min, 2min, 2min, 2min
-- Trend: P02-01/02/03 fast -- targeted file modifications, no integration or checkpoints
+- Last 5 plans: 15min, 2min, 2min, 2min, 3min
+- Trend: Phase 2 complete -- all 4 plans executed efficiently, P04 integration required checkpoint verification
 
 *Updated after each plan completion*
 
@@ -70,6 +71,11 @@ Recent decisions affecting current work:
 - [Phase 02-03]: process.execPath for MCP server command -- same Node.js binary (node or tsx) runs the permission server
 - [Phase 02-03]: MCP config passed as inline JSON string to --mcp-config (not a file path)
 - [Phase 02-03]: config.ipcPort imported directly in router.ts rather than threading through BridgeRouter constructor
+- [Phase 02-04]: 1.5s debounce for streaming message edits -- safe margin below Discord rate limits
+- [Phase 02-04]: 1800 char max display (100-char buffer below Discord 2000 limit) for streaming messages
+- [Phase 02-04]: 1500 char threshold for main channel summary truncation with thread link
+- [Phase 02-04]: tsx binary path for MCP server in dev (not node + .js) -- tsx handles TypeScript directly
+- [Phase 02-04]: Strip CLAUDECODE env var from subprocess to prevent nested session detection
 
 ### Pending Todos
 
@@ -81,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-12
-Stopped at: Completed 02-03-PLAN.md
+Last session: 2026-02-13
+Stopped at: Completed 02-04-PLAN.md -- Phase 2 (Interactive Proxy) fully complete
 Resume file: None
