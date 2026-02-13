@@ -45,11 +45,13 @@ Plans:
   3. When Claude asks a clarifying question, user sees selectable options rendered as Discord buttons or select menus
   4. User can watch Claude's response stream in real-time via in-place message edits, with tool activity indicators showing what Claude is doing
   5. Each session creates a thread with full details while the main channel gets a concise summary
-**Plans**: TBD
+**Plans:** 4 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md -- MCP permission server + IPC bridge infrastructure
+- [ ] 02-02-PLAN.md -- Discord interactive components + permission handler
+- [ ] 02-03-PLAN.md -- Claude CLI MCP wiring + config
+- [ ] 02-04-PLAN.md -- Thread output, streaming, router integration, and end-to-end verification
 
 ### Phase 3: Session Persistence
 **Goal**: User can resume sessions across bot restarts, continue previous conversations, and track costs
@@ -73,5 +75,5 @@ Phases execute in numeric order: 1 -> 2 -> 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Bot + Claude Connection | 3/3 | Complete | 2026-02-12 |
-| 2. Interactive Proxy | 0/TBD | Not started | - |
+| 2. Interactive Proxy | 0/4 | Not started | - |
 | 3. Session Persistence | 0/TBD | Not started | - |
