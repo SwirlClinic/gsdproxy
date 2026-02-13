@@ -28,14 +28,17 @@ export function spawnClaude(
   }
 
   // Build MCP config for permission server
+  // Resolve paths: tsx binary for running TypeScript, permission-server.ts source file
+  const thisDir = path.dirname(fileURLToPath(import.meta.url));
+  const projectRoot = path.resolve(thisDir, "../..");
+  const tsxBin = path.resolve(projectRoot, "node_modules/.bin/tsx");
+  const permissionServerPath = path.resolve(thisDir, "../mcp/permission-server.ts");
+
   const mcpConfig = JSON.stringify({
     mcpServers: {
       permsrv: {
-        command: process.execPath,
-        args: [path.resolve(
-          path.dirname(fileURLToPath(import.meta.url)),
-          "../mcp/permission-server.js"
-        )],
+        command: tsxBin,
+        args: [permissionServerPath],
         env: {
           GSD_IPC_PORT: String(options.ipcPort),
         },
@@ -63,9 +66,13 @@ export function spawnClaude(
     "Grep"
   );
 
+  // Strip CLAUDECODE env var to prevent "nested session" detection
+  const cleanEnv = { ...process.env };
+  delete cleanEnv.CLAUDECODE;
+
   return spawn("claude", args, {
     cwd: options.cwd,
     stdio: ["inherit", "pipe", "pipe"],
-    env: process.env,
+    env: cleanEnv,
   });
 }
