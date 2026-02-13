@@ -21,24 +21,24 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **CLDI-01**: User can send a message in Discord that gets forwarded to Claude Code via CLI spawning
 - [x] **CLDI-02**: User can see Claude's response in Discord with proper markdown and code block formatting
 - [x] **CLDI-03**: Sequential queue processing limits concurrent execution (one Claude process at a time)
-- [ ] **CLDI-04**: User can see Claude's response tokens streaming in real-time via in-place message edits (debounced to avoid rate limits)
-- [ ] **CLDI-05**: User can see what tool Claude is currently using ("Reading file...", "Running command...") as status indicators
+- [x] **CLDI-04**: User can see Claude's response tokens streaming in real-time via in-place message edits (debounced to avoid rate limits)
+- [x] **CLDI-05**: User can see what tool Claude is currently using ("Reading file...", "Running command...") as status indicators
 - [ ] **CLDI-06**: User can continue a previous conversation with a `/continue` command that resumes the last session
 
 ### Permission System
 
-- [ ] **PERM-01**: When Claude requests tool permission, user sees an embed with tool name and input, plus Allow/Deny buttons in Discord
-- [ ] **PERM-02**: User can approve or deny tool execution with a single button click
-- [ ] **PERM-03**: Permission prompts auto-deny after 5 minutes if user doesn't respond, with a timeout notification
-- [ ] **PERM-04**: When Claude asks a clarifying question (AskUserQuestion), user sees the question with selectable options rendered as Discord buttons or select menus
-- [ ] **PERM-05**: User's selected answer to AskUserQuestion gets forwarded back to Claude and execution continues
+- [x] **PERM-01**: When Claude requests tool permission, user sees an embed with tool name and input, plus Allow/Deny buttons in Discord
+- [x] **PERM-02**: User can approve or deny tool execution with a single button click
+- [x] **PERM-03**: Permission prompts auto-deny after 5 minutes if user doesn't respond, with a timeout notification
+- [x] **PERM-04**: When Claude asks a clarifying question (AskUserQuestion), user sees the question with selectable options rendered as Discord buttons or select menus
+- [x] **PERM-05**: User's selected answer to AskUserQuestion gets forwarded back to Claude and execution continues
 
 ### Output & Display
 
 - [x] **OUTD-01**: Long Claude responses are split at code block or paragraph boundaries, never mid-word or mid-code-fence
-- [ ] **OUTD-02**: Each Claude session creates a Discord thread where detailed output (tool calls, full responses) is posted
-- [ ] **OUTD-03**: Main channel receives a concise summary message with a link to the thread for full details
-- [ ] **OUTD-04**: When Claude's response exceeds ~1500 chars, a summary is posted in-channel and the full output goes to the thread
+- [x] **OUTD-02**: Each Claude session creates a Discord thread where detailed output (tool calls, full responses) is posted
+- [x] **OUTD-03**: Main channel receives a concise summary message with a link to the thread for full details
+- [x] **OUTD-04**: When Claude's response exceeds ~1500 chars, a summary is posted in-channel and the full output goes to the thread
 - [ ] **OUTD-05**: User can see token usage and estimated cost after each session completes (from SDK's total_cost_usd)
 
 ### Session Management
@@ -95,18 +95,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLDI-01 | Phase 1 | Done |
 | CLDI-02 | Phase 1 | Done |
 | CLDI-03 | Phase 1 | Done |
-| CLDI-04 | Phase 2 | Pending |
-| CLDI-05 | Phase 2 | Pending |
+| CLDI-04 | Phase 2 | Done |
+| CLDI-05 | Phase 2 | Done |
 | CLDI-06 | Phase 3 | Pending |
-| PERM-01 | Phase 2 | Pending |
-| PERM-02 | Phase 2 | Pending |
-| PERM-03 | Phase 2 | Pending |
-| PERM-04 | Phase 2 | Pending |
-| PERM-05 | Phase 2 | Pending |
+| PERM-01 | Phase 2 | Done |
+| PERM-02 | Phase 2 | Done |
+| PERM-03 | Phase 2 | Done |
+| PERM-04 | Phase 2 | Done |
+| PERM-05 | Phase 2 | Done |
 | OUTD-01 | Phase 1 | Done |
-| OUTD-02 | Phase 2 | Pending |
-| OUTD-03 | Phase 2 | Pending |
-| OUTD-04 | Phase 2 | Pending |
+| OUTD-02 | Phase 2 | Done |
+| OUTD-03 | Phase 2 | Done |
+| OUTD-04 | Phase 2 | Done |
 | OUTD-05 | Phase 3 | Pending |
 | SESN-01 | Phase 3 | Pending |
 | SESN-02 | Phase 3 | Pending |
@@ -120,4 +120,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-12 after Phase 1 completion*
+*Last updated: 2026-02-13 after Phase 2 completion*
