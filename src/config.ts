@@ -22,6 +22,7 @@ export const config = {
   guildId: process.env.DISCORD_GUILD_ID!,
   channelId: process.env.DISCORD_CHANNEL_ID!,
   ownerId: process.env.DISCORD_OWNER_ID!,
+  ipcPort: parseInt(process.env.GSD_IPC_PORT || "9824", 10),
 } as const;
 
 export const cwd = process.cwd();

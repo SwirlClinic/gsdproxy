@@ -134,4 +134,5 @@ export interface SpawnOptions {
   cwd: string;
   continueSession?: boolean;
   sessionId?: string;
+  ipcPort: number;
 }

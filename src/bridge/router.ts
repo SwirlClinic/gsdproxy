@@ -1,6 +1,7 @@
 import type { ChildProcess } from "node:child_process";
 import { type Message, type TextChannel } from "discord.js";
 import { spawnClaude } from "../claude/process.js";
+import { config } from "../config.js";
 import { parseStream, captureStderr } from "../claude/parser.js";
 import { splitMessage, formatToolActivity } from "../discord/formatter.js";
 import { logger } from "../logger.js";
@@ -73,6 +74,7 @@ export class BridgeRouter {
       const proc = spawnClaude(message.content, {
         cwd: this.cwd,
         continueSession: this.hasSession,
+        ipcPort: config.ipcPort,
       });
       this.activeProcess = proc;
 
