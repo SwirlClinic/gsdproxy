@@ -10,10 +10,16 @@ import { setOnNew } from "./discord/commands/new.js";
 import { handleMessage, setRouter } from "./discord/handlers/message.js";
 import { handleInteraction } from "./discord/handlers/interaction.js";
 import { BridgeRouter } from "./bridge/router.js";
+import { IpcServer } from "./bridge/ipc-server.js";
+import { PermissionHandler } from "./bridge/permission-handler.js";
 import { logger } from "./logger.js";
 
-// Create BridgeRouter instance with the current working directory
-const router = new BridgeRouter(cwd);
+// Create IPC server and permission handler
+const ipcServer = new IpcServer(config.ipcPort);
+const permissionHandler = new PermissionHandler();
+
+// Create BridgeRouter instance with IPC server and permission handler
+const router = new BridgeRouter(cwd, ipcServer, permissionHandler);
 
 // Wire the router to the message handler
 setRouter(router);
@@ -29,6 +35,10 @@ setSessionStatusGetter(() => {
 
   if (status.queueLength > 0) {
     lines.push(`**Queued messages:** ${status.queueLength}`);
+  }
+
+  if (status.threadId) {
+    lines.push(`**Active thread:** <#${status.threadId}>`);
   }
 
   return lines.join("\n");
@@ -65,11 +75,19 @@ client.on(Events.InteractionCreate, (interaction) => {
 
 // ── Graceful shutdown ────────────────────────────────────────────────────────
 
-function shutdown(signal: string): void {
+async function shutdown(signal: string): Promise<void> {
   logger.info({ signal }, "Shutting down gracefully");
 
   // Kill any active Claude process
   router.abort();
+
+  // Stop the IPC server (auto-denies pending permission requests)
+  try {
+    await ipcServer.stop();
+    logger.info("IPC server stopped");
+  } catch (err) {
+    logger.warn({ err }, "Error stopping IPC server");
+  }
 
   // Disconnect from Discord
   client.destroy();
@@ -85,9 +103,13 @@ process.on("exit", () => {
   router.abort();
 });
 
-// Register slash commands and login
+// Register slash commands, start IPC server, and login
 async function start(): Promise<void> {
   try {
+    // Start IPC server before Discord login
+    await ipcServer.start();
+    logger.info({ port: config.ipcPort }, "IPC server started");
+
     await registerCommands(config.token, config.appId, config.guildId);
     await client.login(config.token);
   } catch (error) {

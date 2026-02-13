@@ -208,3 +208,33 @@ export function formatToolActivity(
 
   return `*Using ${toolName}...*`;
 }
+
+const SUMMARY_MAX_LENGTH = 1500;
+
+/**
+ * Format a summary message for the main channel. Short responses are shown
+ * in full with a thread link; long responses are truncated at a natural
+ * break point with a link to the full output in the thread.
+ */
+export function formatSummary(fullText: string, threadLink: string): string {
+  if (fullText.length <= SUMMARY_MAX_LENGTH) {
+    return fullText + `\n\n*Details: ${threadLink}*`;
+  }
+
+  // Truncate at a natural break: paragraph > line > space
+  const breakPoints = [
+    fullText.lastIndexOf("\n\n", SUMMARY_MAX_LENGTH),
+    fullText.lastIndexOf("\n", SUMMARY_MAX_LENGTH),
+    fullText.lastIndexOf(" ", SUMMARY_MAX_LENGTH),
+  ];
+
+  let cutoff = SUMMARY_MAX_LENGTH;
+  for (const bp of breakPoints) {
+    if (bp > 0) {
+      cutoff = bp;
+      break;
+    }
+  }
+
+  return fullText.slice(0, cutoff) + `...\n\n*Full output: ${threadLink}*`;
+}

@@ -1,10 +1,26 @@
 import type { ChildProcess } from "node:child_process";
-import { type Message, type TextChannel } from "discord.js";
+import {
+  type Message,
+  type TextChannel,
+  type ThreadChannel,
+  ThreadAutoArchiveDuration,
+} from "discord.js";
 import { spawnClaude } from "../claude/process.js";
 import { config } from "../config.js";
 import { parseStream, captureStderr } from "../claude/parser.js";
-import { splitMessage, formatToolActivity } from "../discord/formatter.js";
+import {
+  splitMessage,
+  formatToolActivity,
+  formatSummary,
+} from "../discord/formatter.js";
 import { logger } from "../logger.js";
+import { StreamingMessage } from "./streaming-message.js";
+import type { IpcServer } from "./ipc-server.js";
+import type { PermissionHandler } from "./permission-handler.js";
+import type {
+  PermissionRequest,
+  PermissionDecision,
+} from "../mcp/ipc-client.js";
 import type {
   ClaudeStreamEvent,
   ContentBlockStart,
@@ -21,7 +37,7 @@ interface QueuedMessage {
 /**
  * BridgeRouter is the central orchestration class that bridges Discord messages
  * to the Claude CLI subprocess. It manages session state, typing indicators,
- * message queuing, and response formatting.
+ * message queuing, thread creation, streaming output, and permission handling.
  */
 export class BridgeRouter {
   private activeProcess: ChildProcess | null = null;
@@ -30,14 +46,32 @@ export class BridgeRouter {
   private messageQueue: QueuedMessage[] = [];
   private hasSession = false;
   private readonly cwd: string;
+  private readonly ipcServer: IpcServer;
+  private readonly permissionHandler: PermissionHandler;
+  private activeThread: ThreadChannel | null = null;
 
-  constructor(cwd: string) {
+  constructor(
+    cwd: string,
+    ipcServer: IpcServer,
+    permissionHandler: PermissionHandler
+  ) {
     this.cwd = cwd;
+    this.ipcServer = ipcServer;
+    this.permissionHandler = permissionHandler;
+
+    // Wire IPC permission-request events to the permission handler
+    this.ipcServer.on(
+      "permission-request",
+      (request: PermissionRequest, resolve: (d: PermissionDecision) => void) => {
+        this.handlePermissionEvent(request, resolve);
+      }
+    );
   }
 
   /**
    * Handle an incoming Discord message by forwarding it to Claude.
-   * If already processing, queues the message with a notification.
+   * Creates a thread for detailed output, streams responses in real-time,
+   * and posts a concise summary in the main channel.
    *
    * NOTE: The message is guaranteed to come from the dedicated guild text channel
    * (enforced by the channelId guard in the message handler), so casting to
@@ -58,16 +92,41 @@ export class BridgeRouter {
 
     this.isProcessing = true;
 
-    // Start typing indicator loop
-    const stopTyping = this.startTypingLoop(channel);
-
-    // Send status message
-    let statusMessage: Message | null = null;
+    // Create a thread for this session
+    const threadName =
+      message.content.slice(0, 95) +
+      (message.content.length > 95 ? "..." : "");
+    let thread: ThreadChannel;
     try {
-      statusMessage = await channel.send("*Working on it...*");
+      thread = await channel.threads.create({
+        name: threadName,
+        autoArchiveDuration: ThreadAutoArchiveDuration.OneHour,
+        reason: "Claude session output",
+      });
+      this.activeThread = thread;
     } catch (err) {
-      logger.warn({ err }, "Failed to send status message");
+      logger.error({ err }, "Failed to create thread");
+      await channel.send("**Error:** Failed to create thread for this session.");
+      this.isProcessing = false;
+      this.processQueue();
+      return;
     }
+
+    // Post initial status in thread and create StreamingMessage
+    let streamingMessage: StreamingMessage;
+    try {
+      const statusMsg = await thread.send("*Working on it...*");
+      streamingMessage = new StreamingMessage(statusMsg);
+    } catch (err) {
+      logger.error({ err }, "Failed to send initial status in thread");
+      this.isProcessing = false;
+      this.activeThread = null;
+      this.processQueue();
+      return;
+    }
+
+    // Start typing indicator on the main channel
+    const stopTyping = this.startTypingLoop(channel);
 
     try {
       // Spawn Claude subprocess
@@ -81,18 +140,17 @@ export class BridgeRouter {
       // Capture stderr for error reporting
       const stderrPromise = captureStderr(proc);
 
-      // Track text accumulation and tool input JSON for parsing
-      let accumulatedText = "";
+      // Track tool state for status messages
       let currentToolName: string | null = null;
       let currentToolJson = "";
 
       // Parse the NDJSON stream
       for await (const event of parseStream(proc)) {
         await this.handleStreamEvent(event, {
-          statusMessage,
+          streamingMessage,
           channel,
           onText: (text: string) => {
-            accumulatedText += text;
+            streamingMessage.appendText(text);
           },
           onToolStart: (name: string) => {
             currentToolName = name;
@@ -122,40 +180,34 @@ export class BridgeRouter {
       // Stop typing indicator
       stopTyping();
 
-      // Delete the status message
-      if (statusMessage) {
-        try {
-          await statusMessage.delete();
-        } catch {
-          // Message may already be deleted
-        }
-      }
+      // Flush the streaming message (final edit)
+      await streamingMessage.flush();
+
+      const accumulatedText = streamingMessage.getAccumulatedText();
 
       // Check for non-zero exit with no accumulated text
       if (exitCode !== 0 && !accumulatedText) {
         const stderr = await stderrPromise;
         const errorMsg =
           stderr.trim() || `Claude process exited with code ${exitCode}`;
-        await channel.send(`**Error:** ${errorMsg}`);
+        await thread.send(`**Error:** ${errorMsg}`);
+        await channel.send(
+          `**Error:** ${errorMsg}\n\n*Thread: ${thread.url}*`
+        );
       } else if (accumulatedText) {
-        // Send accumulated text as formatted response
+        // Post full output to thread via splitMessage
         const chunks = splitMessage(accumulatedText);
         for (const chunk of chunks) {
-          await channel.send(chunk);
+          await thread.send(chunk);
         }
+
+        // Post summary to main channel with thread link
+        const summary = formatSummary(accumulatedText, thread.url);
+        await channel.send(summary);
       }
     } catch (error) {
       // Stop typing on any error
       stopTyping();
-
-      // Delete status message on error
-      if (statusMessage) {
-        try {
-          await statusMessage.delete();
-        } catch {
-          // Ignore
-        }
-      }
 
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -175,6 +227,7 @@ export class BridgeRouter {
       logger.error({ error }, "Error handling message");
     } finally {
       this.activeProcess = null;
+      this.activeThread = null;
       this.isProcessing = false;
 
       // Process queued messages
@@ -184,11 +237,13 @@ export class BridgeRouter {
 
   /**
    * Handle a single stream event from the Claude process.
+   * Text deltas go to StreamingMessage.appendText for debounced display.
+   * Tool activity goes to StreamingMessage.setStatus for immediate display.
    */
   private async handleStreamEvent(
     event: ClaudeStreamEvent,
     ctx: {
-      statusMessage: Message | null;
+      streamingMessage: StreamingMessage;
       channel: TextChannel;
       onText: (text: string) => void;
       onToolStart: (name: string) => void;
@@ -221,18 +276,12 @@ export class BridgeRouter {
               const toolBlock = block as ToolUseBlock;
               ctx.onToolStart(toolBlock.name);
 
-              // Show initial tool activity
+              // Show initial tool activity via StreamingMessage
               const activity = formatToolActivity(
                 toolBlock.name,
                 toolBlock.input
               );
-              if (ctx.statusMessage) {
-                try {
-                  await ctx.statusMessage.edit(activity);
-                } catch {
-                  // Status message may be deleted
-                }
-              }
+              await ctx.streamingMessage.setStatus(activity);
             }
             break;
           }
@@ -255,13 +304,7 @@ export class BridgeRouter {
                     unknown
                   >;
                   const activity = formatToolActivity(toolName, parsed);
-                  if (ctx.statusMessage) {
-                    try {
-                      await ctx.statusMessage.edit(activity);
-                    } catch {
-                      // Status message may be deleted
-                    }
-                  }
+                  await ctx.streamingMessage.setStatus(activity);
                 } catch {
                   // JSON not complete yet, ignore
                 }
@@ -283,18 +326,54 @@ export class BridgeRouter {
 
         if (result.is_error) {
           const errorText = result.result || "Unknown error";
-          await ctx.channel.send(`**Error from Claude:** ${errorText}`);
+          if (this.activeThread) {
+            await this.activeThread.send(`**Error from Claude:** ${errorText}`);
+          } else {
+            await ctx.channel.send(`**Error from Claude:** ${errorText}`);
+          }
         } else if (
           result.num_turns !== undefined &&
           result.total_cost_usd !== undefined
         ) {
-          await ctx.channel.send(
-            `*Completed in ${result.num_turns} turn(s) ($${result.total_cost_usd.toFixed(4)})*`
-          );
+          const info = `*Completed in ${result.num_turns} turn(s) ($${result.total_cost_usd.toFixed(4)})*`;
+          if (this.activeThread) {
+            await this.activeThread.send(info);
+          }
         }
         break;
       }
     }
+  }
+
+  /**
+   * Handle a permission request event from the IPC server.
+   * Routes the prompt to the active thread (or main channel as fallback).
+   */
+  private handlePermissionEvent(
+    request: PermissionRequest,
+    resolve: (decision: PermissionDecision) => void
+  ): void {
+    // Determine target channel: prefer active thread, fall back to main channel
+    const targetChannel = this.activeThread;
+    if (!targetChannel) {
+      logger.warn(
+        { toolName: request.tool_name },
+        "Permission request received but no active thread or channel"
+      );
+      resolve({ behavior: "deny", message: "No active session" });
+      return;
+    }
+
+    // Handle the permission request asynchronously
+    this.permissionHandler
+      .handlePermissionRequest(request, targetChannel)
+      .then((decision) => {
+        resolve(decision);
+      })
+      .catch((err) => {
+        logger.error({ err }, "Permission handler error");
+        resolve({ behavior: "deny", message: "Permission handler error" });
+      });
   }
 
   /**
@@ -305,6 +384,7 @@ export class BridgeRouter {
     if (this.activeProcess) {
       this.activeProcess.kill("SIGTERM");
       this.activeProcess = null;
+      this.activeThread = null;
       this.isProcessing = false;
       // Clear the message queue
       for (const queued of this.messageQueue) {
@@ -324,12 +404,14 @@ export class BridgeRouter {
     sessionId: string | null;
     cwd: string;
     queueLength: number;
+    threadId: string | null;
   } {
     return {
       isProcessing: this.isProcessing,
       sessionId: this.sessionId,
       cwd: this.cwd,
       queueLength: this.messageQueue.length,
+      threadId: this.activeThread?.id ?? null,
     };
   }
 

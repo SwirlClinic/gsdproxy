@@ -8,19 +8,13 @@ import {
   createQuestionSelect,
 } from "../discord/components/question-prompt.js";
 import type { AskUserQuestionInput } from "../discord/components/question-prompt.js";
+import type {
+  PermissionRequest,
+  PermissionDecision,
+} from "../mcp/ipc-client.js";
 import { logger } from "../logger.js";
 
-export interface PermissionRequest {
-  tool_use_id: string;
-  tool_name: string;
-  input: Record<string, unknown>;
-}
-
-export interface PermissionDecision {
-  behavior: "allow" | "deny";
-  updatedInput?: unknown;
-  message?: string;
-}
+export type { PermissionRequest, PermissionDecision };
 
 /**
  * PermissionHandler renders Discord prompts for tool permission requests
@@ -46,7 +40,8 @@ export class PermissionHandler {
     }
 
     // Build permission embed and buttons
-    const embed = createPermissionEmbed(request.tool_name, request.input);
+    const input = request.input as Record<string, unknown>;
+    const embed = createPermissionEmbed(request.tool_name, input);
     const buttons = createPermissionButtons(request.tool_use_id);
 
     // Send prompt to Discord
