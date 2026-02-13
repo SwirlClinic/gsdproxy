@@ -6,6 +6,16 @@ export type ClaudeStreamEvent =
   | ResultEvent
   | StreamEvent;
 
+// ── Session types ────────────────────────────────────────────────────────────
+
+export type SessionState = "idle" | "processing" | "dead";
+
+export interface SessionOptions {
+  cwd: string;
+  ipcPort: number;
+  dangerouslySkipPermissions?: boolean;
+}
+
 // ── System ───────────────────────────────────────────────────────────────────
 
 export interface SystemInitEvent {
@@ -15,6 +25,8 @@ export interface SystemInitEvent {
   cwd: string;
   tools: string[];
   model: string;
+  mcp_servers?: string[];
+  slash_commands?: string[];
 }
 
 // ── Stream events (partial / real-time) ──────────────────────────────────────
@@ -128,11 +140,3 @@ export interface ResultEvent {
   };
 }
 
-// ── Spawn options ────────────────────────────────────────────────────────────
-
-export interface SpawnOptions {
-  cwd: string;
-  continueSession?: boolean;
-  sessionId?: string;
-  ipcPort: number;
-}
