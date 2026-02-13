@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 2 of 3 (Interactive Proxy)
-Plan: 2 of 4 in current phase (02-01, 02-02 complete)
+Plan: 3 of 4 in current phase (02-01, 02-02, 02-03 complete)
 Status: Executing
-Last activity: 2026-02-12 -- Completed 02-02-PLAN.md (Permission Prompt Components)
+Last activity: 2026-02-12 -- Completed 02-03-PLAN.md (Claude CLI MCP Wiring)
 
-Progress: [█████░░░░░] 50%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
+- Total plans completed: 6
 - Average duration: 5min
-- Total execution time: 0.42 hours
+- Total execution time: 0.45 hours
 
 **By Phase:**
 
@@ -32,10 +32,11 @@ Progress: [█████░░░░░] 50%
 | 01 | P03 | 15min | 3 | 6 |
 | 02 | P01 | 2min | 2 | 4 |
 | 02 | P02 | 2min | 2 | 3 |
+| 02 | P03 | 2min | 2 | 5 |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 3min, 15min, 2min, 2min
-- Trend: P02-01/02 fast -- pure file creation, no integration or checkpoints
+- Last 5 plans: 3min, 15min, 2min, 2min, 2min
+- Trend: P02-01/02/03 fast -- targeted file modifications, no integration or checkpoints
 
 *Updated after each plan completion*
 
@@ -65,6 +66,10 @@ Recent decisions affecting current work:
 - [Phase 02-02]: EmbedBuilder mutated in-place for post-interaction state updates (color + footer) rather than new instances
 - [Phase 02-02]: Sequential question processing for AskUserQuestion -- timeout on any question auto-denies entire request
 - [Phase 02-02]: Component factory pattern: createPermissionEmbed/Buttons/QuestionSelect return discord.js builders
+- [Phase 02-03]: import.meta.url for resolving permission-server.js path -- works in both tsx dev and compiled dist/
+- [Phase 02-03]: process.execPath for MCP server command -- same Node.js binary (node or tsx) runs the permission server
+- [Phase 02-03]: MCP config passed as inline JSON string to --mcp-config (not a file path)
+- [Phase 02-03]: config.ipcPort imported directly in router.ts rather than threading through BridgeRouter constructor
 
 ### Pending Todos
 
@@ -77,5 +82,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 02-02-PLAN.md
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None
