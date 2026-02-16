@@ -16,6 +16,20 @@ export interface SessionOptions {
   dangerouslySkipPermissions?: boolean;
 }
 
+export interface ManagedSession {
+  id: string;                    // Internal session ID (crypto.randomUUID())
+  claudeSession: import("./session.js").ClaudeSession;  // The Claude CLI process wrapper
+  threadId: string;              // Discord thread ID
+  threadUrl: string;             // Discord thread URL for display
+  startedAt: Date;               // When session was created
+  messageCount: number;          // Messages sent in this session
+  lastActivityAt: Date;          // Last message timestamp
+  totalCostUsd: number;          // Cumulative from ResultEvent.total_cost_usd (assign, not add)
+  totalInputTokens: number;      // Accumulated from ResultEvent.usage.input_tokens (add per turn)
+  totalOutputTokens: number;     // Accumulated from ResultEvent.usage.output_tokens (add per turn)
+  isProcessing: boolean;         // Currently waiting for Claude response
+}
+
 // ── System ───────────────────────────────────────────────────────────────────
 
 export interface SystemInitEvent {
