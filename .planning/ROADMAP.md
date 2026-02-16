@@ -54,18 +54,19 @@ Plans:
 - [x] 02-04-PLAN.md -- Thread output, streaming, router integration, and end-to-end verification
 
 ### Phase 3: Session Persistence
-**Goal**: User can resume sessions across bot restarts, continue previous conversations, and track costs
+**Goal**: User can manage multiple concurrent sessions, continue previous conversations, stop active sessions, and see usage costs -- all in-memory within the bot's process lifetime
 **Depends on**: Phase 2
 **Requirements**: SESN-01, SESN-02, SESN-03, SESN-04, CLDI-06, OUTD-05
 **Success Criteria** (what must be TRUE):
-  1. User can restart the bot and resume a previous session without losing context
-  2. User can run `/continue` to pick up the last conversation where it left off
-  3. User can run `/new` to start a fresh session and `/stop` to abort an active one
-  4. User can see token usage and estimated cost after each session completes
-**Plans**: TBD
+  1. User can run `/continue` to pick up the last conversation where it left off
+  2. User can run `/new` to start a fresh session and `/stop` to abort an active one
+  3. User can see token usage and estimated cost via `/status`
+  4. Multiple concurrent sessions work independently in different threads
+**Plans:** 2 plans
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md -- SessionManager + BridgeRouter refactor for multi-session support
+- [ ] 03-02-PLAN.md -- Session commands, components, wiring, bot presence, and verification
 
 ## Progress
 
@@ -76,4 +77,4 @@ Phases execute in numeric order: 1 -> 2 -> 3
 |-------|----------------|--------|-----------|
 | 1. Bot + Claude Connection | 3/3 | Complete | 2026-02-12 |
 | 2. Interactive Proxy | 4/4 | Complete | 2026-02-13 |
-| 3. Session Persistence | 0/TBD | Not started | - |
+| 3. Session Persistence | 0/2 | Not started | - |
