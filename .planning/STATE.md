@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** Full bidirectional Claude Code access from Discord -- anything you can do in the terminal, you can do from a Discord channel.
-**Current focus:** Phase 2 complete -- ready for Phase 3: Session Persistence (if planned)
+**Current focus:** Phase 3: Session Persistence -- multi-session support
 
 ## Current Position
 
-Phase: 2 of 3 (Interactive Proxy) -- PHASE COMPLETE
-Plan: 4 of 4 in current phase (02-01, 02-02, 02-03, 02-04 complete)
-Status: Phase 2 Complete
-Last activity: 2026-02-13 - Completed quick task 1: Add --dangerously-skip-permissions flag to ClaudeSession spawn
+Phase: 3 of 3 (Session Persistence)
+Plan: 1 of 2 in current phase (03-01 complete)
+Status: Executing Phase 3
+Last activity: 2026-02-15 - Completed 03-01: SessionManager & multi-session BridgeRouter refactor
 
-Progress: [████████░░] 80%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
+- Total plans completed: 8
 - Average duration: 4min
-- Total execution time: 0.5 hours
+- Total execution time: 0.55 hours
 
 **By Phase:**
 
@@ -34,10 +34,11 @@ Progress: [████████░░] 80%
 | 02 | P02 | 2min | 2 | 3 |
 | 02 | P03 | 2min | 2 | 5 |
 | 02 | P04 | 3min | 3 | 6 |
+| 03 | P01 | 3min | 2 | 3 |
 
 **Recent Trend:**
-- Last 5 plans: 15min, 2min, 2min, 2min, 3min
-- Trend: Phase 2 complete -- all 4 plans executed efficiently, P04 integration required checkpoint verification
+- Last 5 plans: 2min, 2min, 2min, 3min, 3min
+- Trend: Phase 3 started -- P01 session manager and router refactor completed efficiently
 
 *Updated after each plan completion*
 
@@ -76,6 +77,12 @@ Recent decisions affecting current work:
 - [Phase 02-04]: 1500 char threshold for main channel summary truncation with thread link
 - [Phase 02-04]: tsx binary path for MCP server in dev (not node + .js) -- tsx handles TypeScript directly
 - [Phase 02-04]: Strip CLAUDECODE env var from subprocess to prevent nested session detection
+- [Phase 03-01]: SessionManager keyed by Discord thread ID (1:1 thread-to-session mapping)
+- [Phase 03-01]: ManagedSession.claudeSession typed via import() to avoid circular dependency
+- [Phase 03-01]: totalCostUsd assigned (not accumulated) from ResultEvent -- cumulative per CLI process
+- [Phase 03-01]: activeThreads Map caches ThreadChannel objects during processing for permission routing
+- [Phase 03-01]: Per-session isProcessing flag replaces global flag -- concurrent sessions possible
+- [Phase 03-01]: ThreadAutoArchiveDuration.OneDay instead of OneHour per research recommendation
 
 ### Pending Todos
 
@@ -93,6 +100,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-13
-Stopped at: Completed quick-1 plan (add --dangerously-skip-permissions flag)
+Last session: 2026-02-15
+Stopped at: Completed 03-01-PLAN.md (SessionManager & multi-session BridgeRouter)
 Resume file: None
