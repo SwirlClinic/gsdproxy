@@ -114,6 +114,16 @@ npm run build
 npm start
 ```
 
+### Skipping Permission Prompts
+
+By default, every tool use by Claude (file edits, shell commands, etc.) is forwarded to Discord as a permission prompt that you must approve or deny. To auto-approve all tool use and skip these prompts:
+
+```env
+DANGEROUSLY_SKIP_PERMISSIONS=true
+```
+
+This passes `--dangerously-skip-permissions` to the Claude CLI subprocess. Use with caution — Claude will be able to execute any tool without confirmation.
+
 ## Commands
 
 | Command | Description |
