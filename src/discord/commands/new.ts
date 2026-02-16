@@ -1,9 +1,12 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 
-/** Override this callback from Plan 02 to wire actual session reset. */
-export let onNew: () => void = () => {};
+export type OnNew = (interaction: ChatInputCommandInteraction) => Promise<void>;
 
-export function setOnNew(fn: () => void): void {
+let onNew: OnNew = async (interaction) => {
+  await interaction.editReply("Not initialized.");
+};
+
+export function setOnNew(fn: OnNew): void {
   onNew = fn;
 }
 
@@ -14,8 +17,5 @@ export const data = new SlashCommandBuilder()
 export async function execute(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  onNew();
-  await interaction.editReply(
-    "Session reset. Next message starts a new conversation."
-  );
+  await onNew(interaction);
 }

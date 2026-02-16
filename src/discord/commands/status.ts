@@ -1,12 +1,13 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-import { cwd } from "../../config.js";
 
-/** Override this getter from Plan 02 to provide real session status. */
-export let getSessionStatus: () => string = () =>
-  `No active session. Working directory: ${cwd}`;
+export type GetStatus = (interaction: ChatInputCommandInteraction) => Promise<void>;
 
-export function setSessionStatusGetter(fn: () => string): void {
-  getSessionStatus = fn;
+let getStatus: GetStatus = async (interaction) => {
+  await interaction.editReply("Not initialized.");
+};
+
+export function setStatusHandler(fn: GetStatus): void {
+  getStatus = fn;
 }
 
 export const data = new SlashCommandBuilder()
@@ -16,5 +17,5 @@ export const data = new SlashCommandBuilder()
 export async function execute(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  await interaction.editReply(getSessionStatus());
+  await getStatus(interaction);
 }

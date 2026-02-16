@@ -1,23 +1,21 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 
-/** Override this callback from Plan 02 to wire actual stop logic. Returns true if a session was stopped. */
-export let onStop: () => boolean = () => false;
+export type OnStop = (interaction: ChatInputCommandInteraction) => Promise<void>;
 
-export function setOnStop(fn: () => boolean): void {
+let onStop: OnStop = async (interaction) => {
+  await interaction.editReply("Not initialized.");
+};
+
+export function setOnStop(fn: OnStop): void {
   onStop = fn;
 }
 
 export const data = new SlashCommandBuilder()
   .setName("stop")
-  .setDescription("Stop the active Claude session immediately");
+  .setDescription("Stop an active Claude session");
 
 export async function execute(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
-  const stopped = onStop();
-  if (stopped) {
-    await interaction.editReply("Session stopped.");
-  } else {
-    await interaction.editReply("No active session to stop.");
-  }
+  await onStop(interaction);
 }

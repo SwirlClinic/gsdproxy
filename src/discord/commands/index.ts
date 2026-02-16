@@ -1,8 +1,10 @@
 import { ChatInputCommandInteraction, REST, Routes } from "discord.js";
 
+import * as help from "./help.js";
 import * as status from "./status.js";
 import * as stop from "./stop.js";
 import * as newCmd from "./new.js";
+import * as continueCmd from "./continue.js";
 import { logger } from "../../logger.js";
 
 export interface Command {
@@ -11,9 +13,11 @@ export interface Command {
 }
 
 export const commands: Command[] = [
+  { data: help.data, execute: help.execute },
   { data: status.data, execute: status.execute },
   { data: stop.data, execute: stop.execute },
   { data: newCmd.data, execute: newCmd.execute },
+  { data: continueCmd.data, execute: continueCmd.execute },
 ];
 
 export async function registerCommands(
