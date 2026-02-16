@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** Full bidirectional Claude Code access from Discord -- anything you can do in the terminal, you can do from a Discord channel.
-**Current focus:** Phase 3: Session Persistence -- multi-session support
+**Current focus:** All phases complete -- v1.0 milestone achieved
 
 ## Current Position
 
-Phase: 3 of 3 (Session Persistence)
-Plan: 1 of 2 in current phase (03-01 complete)
-Status: Executing Phase 3
-Last activity: 2026-02-15 - Completed 03-01: SessionManager & multi-session BridgeRouter refactor
+Phase: 3 of 3 (Session Persistence) -- COMPLETE
+Plan: 2 of 2 in current phase (03-02 complete)
+Status: All Phases Complete
+Last activity: 2026-02-16 - Completed 03-02: Session lifecycle commands, Discord integration, bot presence
 
-Progress: [█████████░] 90%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
+- Total plans completed: 9
 - Average duration: 4min
-- Total execution time: 0.55 hours
+- Total execution time: 0.65 hours
 
 **By Phase:**
 
@@ -35,10 +35,11 @@ Progress: [█████████░] 90%
 | 02 | P03 | 2min | 2 | 5 |
 | 02 | P04 | 3min | 3 | 6 |
 | 03 | P01 | 3min | 2 | 3 |
+| 03 | P02 | 6min | 3 | 10 |
 
 **Recent Trend:**
-- Last 5 plans: 2min, 2min, 2min, 3min, 3min
-- Trend: Phase 3 started -- P01 session manager and router refactor completed efficiently
+- Last 5 plans: 2min, 2min, 3min, 3min, 6min
+- Trend: All phases complete -- P02 largest plan (10 files, 3 tasks) delivered session lifecycle commands
 
 *Updated after each plan completion*
 
@@ -83,6 +84,11 @@ Recent decisions affecting current work:
 - [Phase 03-01]: activeThreads Map caches ThreadChannel objects during processing for permission routing
 - [Phase 03-01]: Per-session isProcessing flag replaces global flag -- concurrent sessions possible
 - [Phase 03-01]: ThreadAutoArchiveDuration.OneDay instead of OneHour per research recommendation
+- [Phase 03-02]: Async setter callback pattern (OnNew, OnStop, OnContinue, GetStatus) for command-to-index wiring
+- [Phase 03-02]: Bot presence state machine: Online/Ready (0 sessions), Idle/N active (idle), DND/Working (processing)
+- [Phase 03-02]: Thread-based routing: threads check parentId for channel guard, main channel checks channel.id
+- [Phase 03-02]: /continue with dead session creates new session inline rather than re-invoking onNew
+- [Phase 03-02]: Dynamic imports for Discord components in command callbacks to keep top-level imports clean
 
 ### Pending Todos
 
@@ -100,6 +106,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-15
-Stopped at: Completed 03-01-PLAN.md (SessionManager & multi-session BridgeRouter)
+Last session: 2026-02-16
+Stopped at: Completed 03-02-PLAN.md (Session lifecycle commands & Discord integration) -- ALL PHASES COMPLETE
 Resume file: None
