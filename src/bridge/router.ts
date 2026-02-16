@@ -1,13 +1,9 @@
-import type { ChildProcess } from "node:child_process";
 import {
   type Message,
   type TextChannel,
   type ThreadChannel,
   ThreadAutoArchiveDuration,
 } from "discord.js";
-import { spawnClaude } from "../claude/process.js";
-import { config } from "../config.js";
-import { parseStream, captureStderr } from "../claude/parser.js";
 import {
   splitMessage,
   formatToolActivity,
@@ -15,6 +11,7 @@ import {
 } from "../discord/formatter.js";
 import { logger } from "../logger.js";
 import { StreamingMessage } from "./streaming-message.js";
+import type { SessionManager } from "./session-manager.js";
 import type { IpcServer } from "./ipc-server.js";
 import type { PermissionHandler } from "./permission-handler.js";
 import type {
@@ -25,37 +22,40 @@ import type {
   ClaudeStreamEvent,
   ContentBlockStart,
   ContentBlockDelta,
+  ManagedSession,
   ResultEvent,
+  TextBlock,
   ToolUseBlock,
 } from "../claude/types.js";
 
-interface QueuedMessage {
-  message: Message;
-  resolve: () => void;
-}
-
 /**
  * BridgeRouter is the central orchestration class that bridges Discord messages
- * to the Claude CLI subprocess. It manages session state, typing indicators,
- * message queuing, thread creation, streaming output, and permission handling.
+ * to Claude CLI subprocesses via SessionManager. It delegates session lifecycle
+ * to SessionManager and handles thread creation, streaming output, permission
+ * handling, and per-session message routing.
+ *
+ * Multi-session: Each Discord thread maps to an independent ManagedSession.
+ * Messages in the main channel create new threads + sessions. Messages in
+ * existing session threads route to the corresponding session.
  */
 export class BridgeRouter {
-  private activeProcess: ChildProcess | null = null;
-  private sessionId: string | null = null;
-  private isProcessing = false;
-  private messageQueue: QueuedMessage[] = [];
-  private hasSession = false;
-  private readonly cwd: string;
+  private readonly sessionManager: SessionManager;
   private readonly ipcServer: IpcServer;
   private readonly permissionHandler: PermissionHandler;
-  private activeThread: ThreadChannel | null = null;
+
+  /**
+   * Maps thread IDs to ThreadChannel objects for sessions that are currently
+   * processing. Used by permission routing to find the correct thread.
+   * Entries are set at the start of handleSessionMessage and removed in finally.
+   */
+  private readonly activeThreads = new Map<string, ThreadChannel>();
 
   constructor(
-    cwd: string,
+    sessionManager: SessionManager,
     ipcServer: IpcServer,
     permissionHandler: PermissionHandler
   ) {
-    this.cwd = cwd;
+    this.sessionManager = sessionManager;
     this.ipcServer = ipcServer;
     this.permissionHandler = permissionHandler;
 
@@ -69,28 +69,15 @@ export class BridgeRouter {
   }
 
   /**
-   * Handle an incoming Discord message by forwarding it to Claude.
-   * Creates a thread for detailed output, streams responses in real-time,
-   * and posts a concise summary in the main channel.
+   * Handle a new message from the main channel.
+   * Creates a Discord thread and a new session, then delegates to handleSessionMessage.
    *
    * NOTE: The message is guaranteed to come from the dedicated guild text channel
    * (enforced by the channelId guard in the message handler), so casting to
    * TextChannel is safe.
    */
-  async handleMessage(message: Message): Promise<void> {
+  async handleNewMessage(message: Message): Promise<void> {
     const channel = message.channel as TextChannel;
-
-    // If already processing, queue the message
-    if (this.isProcessing) {
-      await channel.send(
-        "*Still working on your previous request. Your message has been queued.*"
-      );
-      return new Promise<void>((resolve) => {
-        this.messageQueue.push({ message, resolve });
-      });
-    }
-
-    this.isProcessing = true;
 
     // Create a thread for this session
     const threadName =
@@ -100,17 +87,52 @@ export class BridgeRouter {
     try {
       thread = await channel.threads.create({
         name: threadName,
-        autoArchiveDuration: ThreadAutoArchiveDuration.OneHour,
+        autoArchiveDuration: ThreadAutoArchiveDuration.OneDay,
         reason: "Claude session output",
       });
-      this.activeThread = thread;
     } catch (err) {
       logger.error({ err }, "Failed to create thread");
       await channel.send("**Error:** Failed to create thread for this session.");
-      this.isProcessing = false;
-      this.processQueue();
       return;
     }
+
+    // Create a new session for this thread
+    const session = this.sessionManager.createSession(thread.id, thread.url);
+
+    await this.handleSessionMessage(message, thread, session);
+  }
+
+  /**
+   * Handle a message in an existing session thread.
+   * Routes the message to the session's ClaudeSession and streams the response.
+   *
+   * Per-session concurrency: if the session is already processing, rejects
+   * with a notice rather than queuing (each session handles one message at a time;
+   * the user can send messages to other sessions while one is processing).
+   */
+  async handleSessionMessage(
+    message: Message,
+    thread: ThreadChannel,
+    session: ManagedSession
+  ): Promise<void> {
+    const channel = (
+      thread.parent ?? message.channel
+    ) as TextChannel;
+
+    // Per-session concurrency check
+    if (session.isProcessing) {
+      await thread.send(
+        "*Still working on your previous request in this session. Please wait.*"
+      );
+      return;
+    }
+
+    session.isProcessing = true;
+    session.messageCount++;
+    session.lastActivityAt = new Date();
+
+    // Track this thread as active for permission routing
+    this.activeThreads.set(session.threadId, thread);
 
     // Post initial status in thread and create StreamingMessage
     let streamingMessage: StreamingMessage;
@@ -119,9 +141,8 @@ export class BridgeRouter {
       streamingMessage = new StreamingMessage(statusMsg);
     } catch (err) {
       logger.error({ err }, "Failed to send initial status in thread");
-      this.isProcessing = false;
-      this.activeThread = null;
-      this.processQueue();
+      session.isProcessing = false;
+      this.activeThreads.delete(session.threadId);
       return;
     }
 
@@ -129,26 +150,17 @@ export class BridgeRouter {
     const stopTyping = this.startTypingLoop(channel);
 
     try {
-      // Spawn Claude subprocess
-      const proc = spawnClaude(message.content, {
-        cwd: this.cwd,
-        continueSession: this.hasSession,
-        ipcPort: config.ipcPort,
-      });
-      this.activeProcess = proc;
-
-      // Capture stderr for error reporting
-      const stderrPromise = captureStderr(proc);
-
       // Track tool state for status messages
       let currentToolName: string | null = null;
       let currentToolJson = "";
 
-      // Parse the NDJSON stream
-      for await (const event of parseStream(proc)) {
+      // Stream events from this session's ClaudeSession
+      for await (const event of session.claudeSession.sendMessage(message.content)) {
         await this.handleStreamEvent(event, {
           streamingMessage,
           channel,
+          thread,
+          session,
           onText: (text: string) => {
             streamingMessage.appendText(text);
           },
@@ -168,15 +180,6 @@ export class BridgeRouter {
         });
       }
 
-      // Wait for process to fully exit
-      const exitCode = await new Promise<number | null>((resolve) => {
-        if (proc.exitCode !== null) {
-          resolve(proc.exitCode);
-          return;
-        }
-        proc.on("exit", (code) => resolve(code));
-      });
-
       // Stop typing indicator
       stopTyping();
 
@@ -185,16 +188,7 @@ export class BridgeRouter {
 
       const accumulatedText = streamingMessage.getAccumulatedText();
 
-      // Check for non-zero exit with no accumulated text
-      if (exitCode !== 0 && !accumulatedText) {
-        const stderr = await stderrPromise;
-        const errorMsg =
-          stderr.trim() || `Claude process exited with code ${exitCode}`;
-        await thread.send(`**Error:** ${errorMsg}`);
-        await channel.send(
-          `**Error:** ${errorMsg}\n\n*Thread: ${thread.url}*`
-        );
-      } else if (accumulatedText) {
+      if (accumulatedText) {
         // Post full output to thread via splitMessage
         const chunks = splitMessage(accumulatedText);
         for (const chunk of chunks) {
@@ -226,12 +220,8 @@ export class BridgeRouter {
 
       logger.error({ error }, "Error handling message");
     } finally {
-      this.activeProcess = null;
-      this.activeThread = null;
-      this.isProcessing = false;
-
-      // Process queued messages
-      this.processQueue();
+      session.isProcessing = false;
+      this.activeThreads.delete(session.threadId);
     }
   }
 
@@ -239,12 +229,15 @@ export class BridgeRouter {
    * Handle a single stream event from the Claude process.
    * Text deltas go to StreamingMessage.appendText for debounced display.
    * Tool activity goes to StreamingMessage.setStatus for immediate display.
+   * Assistant events use replaceText for complete message snapshots.
    */
   private async handleStreamEvent(
     event: ClaudeStreamEvent,
     ctx: {
       streamingMessage: StreamingMessage;
       channel: TextChannel;
+      thread: ThreadChannel;
+      session: ManagedSession;
       onText: (text: string) => void;
       onToolStart: (name: string) => void;
       onToolInputDelta: (json: string) => void;
@@ -256,12 +249,23 @@ export class BridgeRouter {
     switch (event.type) {
       case "system": {
         if (event.subtype === "init") {
-          this.sessionId = event.session_id;
-          this.hasSession = true;
           logger.info(
             { sessionId: event.session_id, model: event.model },
             "Claude session initialized"
           );
+        }
+        break;
+      }
+
+      case "assistant": {
+        // Complete message snapshot -- use replaceText as a fallback/confirmation
+        // of what streaming deltas already accumulated.
+        const textContent = event.message.content
+          .filter((block): block is TextBlock => block.type === "text")
+          .map((block) => block.text)
+          .join("");
+        if (textContent) {
+          ctx.streamingMessage.replaceText(textContent);
         }
         break;
       }
@@ -324,21 +328,25 @@ export class BridgeRouter {
       case "result": {
         const result = event as ResultEvent;
 
+        // Update session cost/token data
+        this.sessionManager.updateSessionCosts(ctx.session.threadId, result);
+
+        // If result contains text and nothing was streamed, use it as output.
+        // This handles CLI slash commands (/compact, /cost, etc.) whose output
+        // only appears in the result event, not as streamed text deltas.
+        if (result.result && !ctx.streamingMessage.getAccumulatedText()) {
+          ctx.streamingMessage.replaceText(result.result);
+        }
+
         if (result.is_error) {
           const errorText = result.result || "Unknown error";
-          if (this.activeThread) {
-            await this.activeThread.send(`**Error from Claude:** ${errorText}`);
-          } else {
-            await ctx.channel.send(`**Error from Claude:** ${errorText}`);
-          }
+          await ctx.thread.send(`**Error from Claude:** ${errorText}`);
         } else if (
           result.num_turns !== undefined &&
           result.total_cost_usd !== undefined
         ) {
           const info = `*Completed in ${result.num_turns} turn(s) ($${result.total_cost_usd.toFixed(4)})*`;
-          if (this.activeThread) {
-            await this.activeThread.send(info);
-          }
+          await ctx.thread.send(info);
         }
         break;
       }
@@ -347,14 +355,13 @@ export class BridgeRouter {
 
   /**
    * Handle a permission request event from the IPC server.
-   * Routes the prompt to the active thread (or main channel as fallback).
+   * Routes the prompt to the correct session's thread using getPermissionThread().
    */
   private handlePermissionEvent(
     request: PermissionRequest,
     resolve: (decision: PermissionDecision) => void
   ): void {
-    // Determine target channel: prefer active thread, fall back to main channel
-    const targetChannel = this.activeThread;
+    const targetChannel = this.getPermissionThread();
     if (!targetChannel) {
       logger.warn(
         { toolName: request.tool_name },
@@ -377,54 +384,54 @@ export class BridgeRouter {
   }
 
   /**
-   * Abort the active Claude process.
-   * Returns true if a process was killed, false if none was active.
+   * Find the thread for routing permission requests.
+   * Looks at currently processing sessions and returns the thread of the
+   * most recently active one. With single-session processing this is
+   * deterministic; with concurrent sessions, uses lastActivityAt as tiebreaker.
    */
-  abort(): boolean {
-    if (this.activeProcess) {
-      this.activeProcess.kill("SIGTERM");
-      this.activeProcess = null;
-      this.activeThread = null;
-      this.isProcessing = false;
-      // Clear the message queue
-      for (const queued of this.messageQueue) {
-        queued.resolve();
+  private getPermissionThread(): ThreadChannel | null {
+    // Find sessions that are currently processing
+    const processingSessions = this.sessionManager
+      .getAllSessions()
+      .filter((s) => s.isProcessing);
+
+    if (processingSessions.length === 0) return null;
+
+    // Sort by lastActivityAt descending (most recent first)
+    processingSessions.sort(
+      (a, b) => b.lastActivityAt.getTime() - a.lastActivityAt.getTime()
+    );
+
+    // Return the cached ThreadChannel for the most recently active processing session
+    const targetSession = processingSessions[0];
+    return this.activeThreads.get(targetSession.threadId) ?? null;
+  }
+
+  /**
+   * Abort a session's current turn.
+   * If threadId is provided, aborts that specific session.
+   * If not provided, aborts all processing sessions.
+   * Returns true if any session was aborted.
+   */
+  abort(threadId?: string): boolean {
+    if (threadId) {
+      const session = this.sessionManager.getSession(threadId);
+      if (session?.isProcessing) {
+        session.claudeSession.abortTurn();
+        return true;
       }
-      this.messageQueue = [];
-      return true;
+      return false;
     }
-    return false;
-  }
 
-  /**
-   * Get the current session status.
-   */
-  getStatus(): {
-    isProcessing: boolean;
-    sessionId: string | null;
-    cwd: string;
-    queueLength: number;
-    threadId: string | null;
-  } {
-    return {
-      isProcessing: this.isProcessing,
-      sessionId: this.sessionId,
-      cwd: this.cwd,
-      queueLength: this.messageQueue.length,
-      threadId: this.activeThread?.id ?? null,
-    };
-  }
-
-  /**
-   * Reset the session so the next message starts a fresh conversation.
-   * If currently processing, aborts first.
-   */
-  resetSession(): void {
-    if (this.isProcessing) {
-      this.abort();
+    // Abort all processing sessions
+    let aborted = false;
+    for (const session of this.sessionManager.getAllSessions()) {
+      if (session.isProcessing) {
+        session.claudeSession.abortTurn();
+        aborted = true;
+      }
     }
-    this.hasSession = false;
-    this.sessionId = null;
+    return aborted;
   }
 
   /**
@@ -438,20 +445,5 @@ export class BridgeRouter {
     }, 9000);
 
     return () => clearInterval(interval);
-  }
-
-  /**
-   * Process the next queued message, if any.
-   */
-  private processQueue(): void {
-    if (this.messageQueue.length === 0) return;
-
-    const next = this.messageQueue.shift()!;
-    next.resolve(); // Resolve the original promise
-
-    // Handle the queued message (fire and forget -- errors handled internally)
-    this.handleMessage(next.message).catch((error) => {
-      logger.error({ error }, "Error handling queued message");
-    });
   }
 }
