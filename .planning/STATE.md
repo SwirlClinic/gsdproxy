@@ -2,10 +2,10 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-12)
+See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Full bidirectional Claude Code access from Discord -- anything you can do in the terminal, you can do from a Discord channel.
-**Current focus:** All phases complete -- v1.0 milestone achieved
+**Current focus:** v1.0 milestone shipped -- planning next milestone
 
 ## Current Position
 
