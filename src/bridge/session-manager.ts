@@ -24,15 +24,19 @@ export class SessionManager {
   /**
    * Create a new session for a Discord thread.
    * Spawns a fresh ClaudeSession process and registers the session in the map.
+   * If cwdOverride is provided, the session runs in that directory instead of the default.
    */
-  createSession(threadId: string, threadUrl: string): ManagedSession {
+  createSession(threadId: string, threadUrl: string, cwdOverride?: string): ManagedSession {
     // Destroy existing session for this thread if one exists
     if (this.sessions.has(threadId)) {
       logger.warn({ threadId }, "Session already exists for thread, destroying old one");
       this.destroySession(threadId);
     }
 
-    const claudeSession = new ClaudeSession(this.sessionOptions);
+    const options = cwdOverride
+      ? { ...this.sessionOptions, cwd: cwdOverride }
+      : this.sessionOptions;
+    const claudeSession = new ClaudeSession(options);
     claudeSession.spawn();
 
     const now = new Date();

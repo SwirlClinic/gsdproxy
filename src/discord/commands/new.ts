@@ -12,7 +12,13 @@ export function setOnNew(fn: OnNew): void {
 
 export const data = new SlashCommandBuilder()
   .setName("new")
-  .setDescription("Start a fresh Claude session");
+  .setDescription("Start a fresh Claude session")
+  .addStringOption((opt) =>
+    opt
+      .setName("cwd")
+      .setDescription("Working directory for this session")
+      .setRequired(false)
+  );
 
 export async function execute(
   interaction: ChatInputCommandInteraction

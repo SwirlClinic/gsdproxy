@@ -30,6 +30,15 @@ export class StreamingMessage {
   }
 
   /**
+   * Replace the accumulated text with a complete snapshot and schedule an edit.
+   * Used for `assistant` events which contain full message content.
+   */
+  replaceText(text: string): void {
+    this.accumulatedText = text;
+    this.scheduleEdit();
+  }
+
+  /**
    * Returns the full accumulated text (for use after completion).
    */
   getAccumulatedText(): string {

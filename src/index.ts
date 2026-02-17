@@ -78,6 +78,7 @@ function updatePresence(): void {
 
 setOnNew(async (interaction) => {
   const channel = interaction.channel as TextChannel;
+  const cwdOverride = interaction.options.getString("cwd") ?? undefined;
 
   // Warn if sessions are active
   if (sessionManager.hasAnySessions()) {
@@ -134,8 +135,9 @@ setOnNew(async (interaction) => {
     reason: "Claude session",
   });
 
-  sessionManager.createSession(thread.id, thread.url);
-  await interaction.editReply(`New session started in <#${thread.id}>`);
+  sessionManager.createSession(thread.id, thread.url, cwdOverride);
+  const cwdNote = cwdOverride ? ` (cwd: \`${cwdOverride}\`)` : "";
+  await interaction.editReply(`New session started in <#${thread.id}>${cwdNote}`);
   updatePresence();
 });
 

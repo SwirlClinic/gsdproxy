@@ -153,6 +153,7 @@ export class BridgeRouter {
       // Track tool state for status messages
       let currentToolName: string | null = null;
       let currentToolJson = "";
+      let needsCompact = false;
 
       // Stream events from this session's ClaudeSession
       for await (const event of session.claudeSession.sendMessage(message.content)) {
@@ -177,7 +178,50 @@ export class BridgeRouter {
           },
           getCurrentToolName: () => currentToolName,
           getCurrentToolJson: () => currentToolJson,
+          onPromptTooLong: () => { needsCompact = true; },
         });
+      }
+
+      // Auto-compact and retry if prompt was too long
+      if (needsCompact) {
+        await streamingMessage.setStatus("*Context full — compacting conversation...*");
+
+        // Send /compact to the Claude CLI process
+        for await (const event of session.claudeSession.sendMessage("/compact")) {
+          if (event.type === "result") break;
+        }
+
+        // Reset state for retry
+        streamingMessage.replaceText("");
+        currentToolName = null;
+        currentToolJson = "";
+
+        // Retry the original message (no onPromptTooLong to prevent infinite loop)
+        await streamingMessage.setStatus("*Retrying after compact...*");
+        for await (const event of session.claudeSession.sendMessage(message.content)) {
+          await this.handleStreamEvent(event, {
+            streamingMessage,
+            channel,
+            thread,
+            session,
+            onText: (text: string) => {
+              streamingMessage.appendText(text);
+            },
+            onToolStart: (name: string) => {
+              currentToolName = name;
+              currentToolJson = "";
+            },
+            onToolInputDelta: (json: string) => {
+              currentToolJson += json;
+            },
+            onToolStop: () => {
+              currentToolName = null;
+              currentToolJson = "";
+            },
+            getCurrentToolName: () => currentToolName,
+            getCurrentToolJson: () => currentToolJson,
+          });
+        }
       }
 
       // Stop typing indicator
@@ -244,6 +288,7 @@ export class BridgeRouter {
       onToolStop: () => void;
       getCurrentToolName: () => string | null;
       getCurrentToolJson: () => string;
+      onPromptTooLong?: () => void;
     }
   ): Promise<void> {
     switch (event.type) {
@@ -340,7 +385,11 @@ export class BridgeRouter {
 
         if (result.is_error) {
           const errorText = result.result || "Unknown error";
-          await ctx.thread.send(`**Error from Claude:** ${errorText}`);
+          if (errorText.includes("Prompt is too long") && ctx.onPromptTooLong) {
+            ctx.onPromptTooLong();
+          } else {
+            await ctx.thread.send(`**Error from Claude:** ${errorText}`);
+          }
         } else if (
           result.num_turns !== undefined &&
           result.total_cost_usd !== undefined
