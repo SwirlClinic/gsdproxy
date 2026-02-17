@@ -27,3 +27,6 @@ export const config = {
 } as const;
 
 export const cwd = process.cwd();
+
+// Directory whose subdirectories are offered as project autocomplete choices
+export const projectsDir: string | undefined = process.env.CLAUDE_PROJECTS_DIR;

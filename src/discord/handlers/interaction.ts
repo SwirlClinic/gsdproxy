@@ -6,6 +6,16 @@ import { logger } from "../../logger.js";
 export async function handleInteraction(
   interaction: Interaction
 ): Promise<void> {
+  if (interaction.isAutocomplete()) {
+    const command = commands.find(
+      (cmd) => cmd.data.name === interaction.commandName
+    );
+    if (command?.autocomplete) {
+      await command.autocomplete(interaction);
+    }
+    return;
+  }
+
   if (!interaction.isChatInputCommand()) return;
 
   // Guard: ignore interactions outside the dedicated channel
