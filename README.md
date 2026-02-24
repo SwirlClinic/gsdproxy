@@ -1,3 +1,6 @@
+
+### Obsoleted by https://x.com/noahzweben/status/2026371260805271615
+
 # GSD Proxy
 
 A Discord bot that provides full bidirectional access to [Claude Code](https://claude.ai/code) from any device. Send messages, approve tool permissions with buttons, watch responses stream in real-time, and manage multiple concurrent sessions — all from Discord.
